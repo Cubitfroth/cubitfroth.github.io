@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Graphing Calculator</title>
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas" width="1000" height="800"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const SCREEN_WIDTH = canvas.width;
+const SCREEN_HEIGHT = canvas.height;
+
+let scale = 50;
+let offset = {
+  x: SCREEN_WIDTH / 2,
+  y: SCREEN_HEIGHT / 2
+};
+
+// Function to graph
+function f(x) {
+  return Math.sin(x);
+}
+
+// Input handling
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+// Zoom
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const zoom = 1 + (e.deltaY < 0 ? 0.1 : -0.1);
+  scale *= zoom;
+});
+
+// Main loop
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function update() {
+  // Pan with arrow keys
+  if (keys["ArrowRight"]) offset.x -= 5;
+  if (keys["ArrowLeft"])  offset.x += 5;
+  if (keys["ArrowUp"])    offset.y += 5;
+  if (keys["ArrowDown"])  offset.y -= 5;
+}
+
+function draw() {
+  // Clear
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+  drawGrid();
+  drawAxes();
+  drawFunction();
+
+  // UI text
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Mouse wheel = zoom | Arrows = pan", 10, 25);
+}
+
+// Grid
+function drawGrid() {
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 1;
+
+  for (let x = -20; x <= 20; x++) {
+    let screenX = offset.x + x * scale;
+    ctx.beginPath();
+    ctx.moveTo(screenX, 0);
+    ctx.lineTo(screenX, SCREEN_HEIGHT);
+    ctx.stroke();
+  }
+
+  for (let y = -20; y <= 20; y++) {
+    let screenY = offset.y + y * scale;
+    ctx.beginPath();
+    ctx.moveTo(0, screenY);
+    ctx.lineTo(SCREEN_WIDTH, screenY);
+    ctx.stroke();
+  }
+}
+
+// Axes
+function drawAxes() {
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 2;
+
+  // X-axis
+  ctx.beginPath();
+  ctx.moveTo(0, offset.y);
+  ctx.lineTo(SCREEN_WIDTH, offset.y);
+  ctx.stroke();
+
+  // Y-axis
+  ctx.beginPath();
+  ctx.moveTo(offset.x, 0);
+  ctx.lineTo(offset.x, SCREEN_HEIGHT);
+  ctx.stroke();
+}
+
+// Function curve
+function drawFunction() {
+  ctx.strokeStyle = "lime";
+  ctx.lineWidth = 2;
+
+  let first = true;
+  let prev = {x: 0, y: 0};
+
+  for (let px = 0; px < SCREEN_WIDTH; px++) {
+    let x = (px - offset.x) / scale;
+    let y = f(x);
+
+    let py = offset.y - y * scale;
+
+    let current = {x: px, y: py};
+
+    if (!first) {
+      ctx.beginPath();
+      ctx.moveTo(prev.x, prev.y);
+      ctx.lineTo(current.x, current.y);
+      ctx.stroke();
+    }
+
+    prev = current;
+    first = false;
+  }
+}
+
+// Start loop
+loop();
+</script>
+
+</body>
+</html>
